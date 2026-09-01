@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shared Tracker</title>
+    <style>
+        :root {
+            --bg: #f4f6f8;
+            --card: #ffffff;
+            --primary: #2563eb;
+            --text: #1e293b;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            display: flex;
+            justify-content: center;
+            padding: 20px;
+            margin: 0;
+        }
+
+        .container {
+            background: var(--card);
+            padding: 24px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 400px;
+        }
+
+        h2 {
+            margin-top: 0;
+            text-align: center;
+            color: var(--primary);
+        }
+
+        .form-group {
+            margin-bottom: 14px;
+        }
+
+        label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        input,
+        select,
+        textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-size: 0.95rem;
+        }
+
+        .row {
+            display: flex;
+            gap: 10px;
+        }
+
+        .row .form-group {
+            flex: 1;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        button:disabled {
+            background: #94a3b8;
+        }
+
+        #status {
+            margin-top: 12px;
+            text-align: center;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .success {
+            color: #16a34a;
+        }
+
+        .error {
+            color: #dc2626;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <h2>Pengeluarin leoo</h2>
+        <form id="trackerForm">
+            <div class="form-group">
+                <label for="tabName">Target Sheet Tab Name</label>
+                <input type="text" id="tabName" placeholder="e.g., March 2026 or Shared" required>
+            </div>
+
+            <div class="row">
+                <div class="form-group">
+                    <label for="date">Date</label>
+                    <input type="date" id="date" required>
+                </div>
+                <div class="form-group">
+                    <label for="time">Time</label>
+                    <input type="time" id="time" required>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="form-group">
+                    <label for="type">Type (In/Out)</label>
+                    <select id="type">
+                        <option value="OUT">OUT (Expense)</option>
+                        <option value="IN">IN (Income)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="category">Category</label>
+                    <select id="category">
+                        <option value="Grocery">Grocery</option>
+                        <option value="Eating Outside">Eating Outside</option>
+                        <option value="Transportation">Transportation</option>
+                        <option value="Entertainment">Entertainment</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="amount">Amount</label>
+                <input type="number" id="amount" step="0.01" placeholder="0.00" required>
+            </div>
+
+            <div class="form-group">
+                <label for="description">Description</label>
+                <textarea id="description" rows="2" placeholder="Detail..."></textarea>
+            </div>
+
+            <button type="submit" id="submitBtn">Submit Transaction</button>
+        </form>
+        <div id="status"></div>
+    </div>
+
+    <script>
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbypyFpR8FiTak6RFSFvBab4CjkNSb--tqIrP4a7KpEjsmrBIjrklFwYrutLgFVJ6iveBQ/exec";
+        // const SCRIPT_URL = "YOUR_APPS_SCRIPT_URL_HERE";
+
+        // Auto-fill current date and time
+        const now = new Date();
+        document.getElementById('date').value = now.toISOString().split('T')[0];
+        document.getElementById('time').value = now.toTimeString().slice(0, 5);
+
+        let isSubmitting = false; // Flag guard to prevent double execution
+
+        document.getElementById('trackerForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            e.stopPropagation(); // Stops event from bubbling up twice
+
+            // If a submit request is already in progress, ignore extra clicks
+            if (isSubmitting) return;
+            isSubmitting = true;
+
+            const statusDiv = document.getElementById('status');
+            const btn = document.getElementById('submitBtn');
+
+            statusDiv.style.color = '#2563eb';
+            statusDiv.textContent = 'Sending...';
+            btn.disabled = true;
+
+            const payload = {
+                tabName: document.getElementById('tabName').value.trim(),
+                date: document.getElementById('date').value,
+                time: document.getElementById('time').value,
+                type: document.getElementById('type').value,
+                category: document.getElementById('category').value,
+                amount: document.getElementById('amount').value,
+                description: document.getElementById('description').value
+            };
+
+            try {
+                await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'text/plain;charset=utf-8'},
+                    body: JSON.stringify(payload),
+                    redirect: 'follow'
+                });
+
+                statusDiv.style.color = '#16a34a';
+                statusDiv.textContent = 'Data sent to sheet!';
+                document.getElementById('amount').value = '';
+                document.getElementById('description').value = '';
+            } catch (err) {
+                statusDiv.style.color = '#dc2626';
+                statusDiv.textContent = 'Network Error';
+                console.error(err);
+            } finally {
+                // Small cooling period before allowing another submission
+                setTimeout(() => {
+                    btn.disabled = false;
+                    isSubmitting = false;
+                }, 1500);
+            }
+        });
+    </script>
+
+</body>
+
+</html>
