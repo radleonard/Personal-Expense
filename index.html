@@ -225,6 +225,7 @@
         <select id="type">
           <option value="OUT">Outcome</option>
           <option value="IN">Income</option>
+          <option value="BKK">Bangkok</option>
         </select>
       </div>
       <div class="form-group">
@@ -235,6 +236,7 @@
           <option value="Transportation">Transportation</option>
           <option value="Entertainment">Entertainment</option>
           <option value="Utilities">Utilities</option>
+          <option value="Accomodation">Accomodation</option>
           <option value="Other">Other</option>
         </select>
       </div>
@@ -325,6 +327,9 @@
     let rawAmount = Number(document.getElementById('amount').value.replace(/\D/g, '')) || 0;
     const type = document.getElementById('type').value;
     if (type === 'OUT' && rawAmount > 0) { 
+      rawAmount = -rawAmount; 
+    }
+    if (type === 'BKK' && rawAmount > 0) { 
       rawAmount = -rawAmount; 
     }
 
